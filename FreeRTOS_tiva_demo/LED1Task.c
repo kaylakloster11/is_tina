@@ -13,7 +13,7 @@
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
-#include "drivers/pinout.h"
+
 #include "pin_map.h"
 
 // Flash the LEDs on the launchpad

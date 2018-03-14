@@ -1,0 +1,172 @@
+/*
+ * FPS.c
+ *
+ *  Created on: Mar 3, 2018
+ *      Author: kaylak
+ */
+
+volatile extern FP_cmd_packet cp;
+volatile extern uint8_t FP_state;
+volatile extern uint8_t data_databuf[30];
+volatile extern uint8_t rsp_databuf[12];
+volatile extern FP_resp rp;
+
+extern volatile uint8_t FP_state;
+extern volatile uint8_t state3;
+extern volatile uint8_t freqDiv;
+extern volatile uint8_t countTime;
+extern volatile uint8_t count_time_fall;
+extern volatile uint8_t timer_exit;
+extern volatile uint8_t FPS_byte_count;
+
+       static const uint8_t *var_SENDCMD = NULL;
+
+void UART_send_byteA2(uint8_t data){
+     while((EUSCI_A2->STATW & EUSCI_A_STATW_BUSY)); //May have to change to using the TXIFG flag
+          EUSCI_A2->TXBUF = data;
+  }
+
+  void UART_send_A2(const uint8_t * data, uint32_t length){
+      int i = 0;
+      for(i=0 ; i<length ; i++){
+          UART_send_byteA2(data[i]);
+      }
+  }
+
+  void FP_Calculate_checksum_cmd(FP_cmd_packet * cmd){
+           int i = 0;
+           uint16_t checksumFULL = 0;
+           uint8_t * bptr = cmd;
+
+           for (i=0;i<10;i++) {
+               checksumFULL += *bptr++;
+            }
+           cp.checksum = checksumFULL;
+       }
+
+    void FPTask_Open(){
+        for(;;)
+        {
+           cp.start_cmd_1 = FP_CMD1_CONSTANT;
+           cp.start_cmd_2 = FP_CMD2_CONSTANT;
+           cp.devid = FP_DEVICEID_CONSTANT;
+           cp.cmd = FP_CMD_OPEN;
+           cp.param[0] = 0;
+           cp.param[1] = 0;
+           cp.param[2] = 0;
+           cp.param[3] = 0;
+           FP_Calculate_checksum_cmd(&cp);
+           FP_state = FP_WAIT_RSP;
+
+           XTaskCreate(FPTask_SendCMD, (const portCHAR *)"Send CMD Packet",
+                          configMINIMAL_STACK_SIZE, (void *) &cp, 2, &xSENDTaskHandle);
+           xTaskCreate(FPTask_WaitResponse, (const portCHAR *)"Wait for Response",
+                           configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+           WaitResponse();
+    }
+
+
+        void FPTask_SendCMD(void * parameter){
+            int i;
+            for(i = 0; i<length; i++){
+               UART_send_byteA2(*data);
+                data++;
+            }
+        }
+
+
+
+       void WaitResponse(){
+            FPS_byte_count = 0;
+                 while(FP_state == FP_WAIT_RSP);
+                   FPS_byte_count = 0;
+                 if(FP_state == FP_PROCESS_RSP){
+                     ProcessRSP();
+                 }
+                  FPS_byte_count = 0;
+             }
+
+       void ProcessRSP(){
+             rp.start_cmd_1 = rsp_databuf[0];
+             rp.start_cmd_2 = rsp_databuf[1];
+             rp.devid = MergeBytes(rsp_databuf[3], rsp_databuf[2]);
+             rp.checksum = MergeBytes(rsp_databuf[11], rsp_databuf[10]);
+             rp.param[0] = rsp_databuf[4];
+             rp.param[1] = rsp_databuf[5];
+             rp.param[2] = rsp_databuf[6];
+             rp.param[3] = rsp_databuf[7];
+             if(rsp_databuf[8] == 0x30){
+                 rp.ack = 1;
+             }
+             else{
+                 rp.ack = 0;
+             }
+             rp.error = GetErrorCode(rsp_databuf[5], rsp_databuf[4]);
+         }
+
+
+       RSP_ERROR_CODE GetErrorCode(uint8_t high, uint8_t low){
+             RSP_ERROR_CODE e;
+             if(high != 0x00){
+                 e = INVALID;
+             }
+             else{
+                 switch(low)
+                   {
+                       case 0x00: e = NO_ERROR; break;
+                       case 0x01: e = NACK_TIMEOUT; break;
+                       case 0x02: e = NACK_INVALID_BAUDRATE; break;
+                       case 0x03: e = NACK_INVALID_POS; break;
+                       case 0x04: e = NACK_IS_NOT_USED; break;
+                       case 0x05: e = NACK_IS_ALREADY_USED; break;
+                       case 0x06: e = NACK_COMM_ERR; break;
+                       case 0x07: e = NACK_VERIFY_FAILED; break;
+                       case 0x08: e = NACK_IDENTIFY_FAILED; break;
+                       case 0x09: e = NACK_DB_IS_FULL; break;
+                       case 0x0A: e = NACK_DB_IS_EMPTY; break;
+                       case 0x0B: e = NACK_TURN_ERR; break;
+                       case 0x0C: e = NACK_BAD_FINGER; break;
+                       case 0x0D: e = NACK_ENROLL_FAILED; break;
+                       case 0x0E: e = NACK_IS_NOT_SUPPORTED; break;
+                       case 0x0F: e = NACK_DEV_ERR; break;
+                       case 0x10: e = NACK_CAPTURE_CANCELED; break;
+                       case 0x11: e = NACK_INVALID_PARAM; break;
+                       case 0x12: e = NACK_FINGER_IS_NOT_PRESSED; break;
+                   }
+               }
+               return e;
+           }
+
+
+       uint16_t MergeBytes(uint8_t high, uint8_t low){
+           uint16_t makeOne = high;
+           makeOne = makeOne << 8;
+           makeOne += low;
+           return makeOne;
+       }
+
+
+       void EUSCIA2_IRQHandler(){
+            if(EUSCI_A2->IFG & EUSCI_A_IFG_RXIFG){
+                if (FP_state == FP_WAIT_RSP)
+                    {
+                        rsp_databuf[FPS_byte_count++]= EUSCI_A2->RXBUF;
+                        if(FPS_byte_count == FP_RSP_PACKET_LENGTH)
+                            {
+                                FP_state = FP_PROCESS_RSP;
+                                EUSCI_A2->IFG &= ~EUSCI_A_IFG_RXIFG;
+                            }
+                    }
+                else if (FP_state == FP_WAIT_DATA)
+                    {
+                        data_databuf[FPS_byte_count++] = EUSCI_A2->RXBUF;
+                        if(FPS_byte_count == FP_DATA_PACKET_LENGTH )
+                            {
+                                FP_state = FP_PROCESS_RSP;
+                                EUSCI_A2->IFG &= ~EUSCI_A_IFG_RXIFG;
+                            }
+                    }
+                }
+            }
+
+

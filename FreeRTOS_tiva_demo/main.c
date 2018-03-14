@@ -5,43 +5,75 @@
  * Kayla Kloster
  */
 
-#include <ledtasks.h>
-#include <stdint.h>
+//#include <ledtasks.h>
 #include "main.h"
-#include "drivers/pinout.h"
-
-// TivaWare includes
-#include "driverlib/sysctl.h"
+#include "FPS.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include "inc/hw_ints.h"
+#include "inc/hw_types.h"
 #include "driverlib/debug.h"
+#include "driverlib/fpu.h"
+#include "driverlib/gpio.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/pin_map.h"
 #include "driverlib/rom.h"
 #include "driverlib/rom_map.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/timer.h"
+#include "driverlib/uart.h"
+#include "utils/uartstdio.h"
+#include "UARTproj.h"
+
+// TivaWare includes
 
 // FreeRTOS includes
 #include "FreeRTOSConfig.h"
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
-
+#include "event_groups.h"
 
 
 // Demo Task declarations
-void LED_Task1(void *pvParameters);
-void LED_Task2(void *pvParameters);
+/*void LED_Task1(void *pvParameters);
+void LED_Task2(void *pvParameters); */
+#define ENROLL_TASK     (1UL << 0UL)
+#define CHECKID_TASK    (1UL << 1UL)
+#define DELETEID_TASK   (1UL << 2UL)
+#define DELETALL_TASK   (1UL << 3UL)
 
+EventGroupHandle_t xUserInEvent;
+
+//FPS state
+volatile FP_cmd_packet cp;
+volatile uint8_t FP_state;
+volatile  uint8_t data_databuf[30];
+volatile  uint8_t rsp_databuf[12];
+volatile  FP_resp rp;
+volatile uint8_t FPS_byte_count = 0;
 // Main function
 int main(void)
 {
-    // Initialize the GPIO pins for the Launchpad
-   PinoutSet(0, 0);
+    ClockSRCFreq = MAP_SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ | SYSCTL_OSC_MAIN |
+                        SYSCTL_USE_PLL | SYSCTL_CFG_VCO_480), 120000000); /* Set clock source to be directly from crystal at 120 MHz */
+    UART_CONFIG();
+    TIMER_CONFIG();
 
-    // Create demo tasks
-    xTaskCreate(LED_Task1, (const portCHAR *)"LED1",
-                configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+    xUserInEvent = xEventGroupCreate();
 
-    xTaskCreate(LED_Task2, (const portCHAR *)"LED2",
-                configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+    xTaskCreate(FP_Task, (const portCHAR *)"Fingerprint Sensor",
+             configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+
+   // MENU_DISPLAY();
+
+   // Open();
 
     vTaskStartScheduler();
+    MENU_DISPLAY();
+    Open();
+
+    for(;;);
     return 0;
 }
 

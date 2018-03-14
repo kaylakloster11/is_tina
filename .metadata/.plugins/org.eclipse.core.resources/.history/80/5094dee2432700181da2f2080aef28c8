@@ -1,0 +1,70 @@
+/*
+ * UARTproj.c
+ *
+ *  Created on: Mar 12, 2018
+ *      Author: kaylak
+ */
+
+
+static const __flash TODO_TASK lookup[5]=
+    {
+     NO_TASK, FP_ENROLL, FP_CHECKID, FP_DELETEID, FP_DELETEALL
+    };
+
+uint8_t MENU_DISPLAY(void){
+    UART_send_A2("MENU Options:", 13);
+    UART_sent_byte(0x0A);
+    UART_send_A2("2.Enroll Print", 14);
+    UART_sent_byte(0x0A);
+    UART_send_A2("1.Check Print", 13);
+    UART_sent_byte(0x0A);
+    UART_sent_A2("3.Delete Print", 14);
+    UART_sent_byte(0x0A);
+    UART_send_A2("4.Delete ALL", 12);
+}
+
+
+void UART_send_byteA2(const uint8_t * data){
+     while(UARTBusy(UART0_BASE)); //May have to change to using the TXIFG flag
+         UARTCharPut(UART0_BASE, data);
+  }
+
+  void UART_send_A2(const uint8_t * data, uint32_t length){
+      int i = 0;
+      for(i=0 ; i<length ; i++){
+          UART_send_byteA2(data[i]);
+      }
+  }
+
+  void UART0_IRQHandler(void){
+         if (FP_state == FP_WAIT_RSP)
+            {
+                rsp_databuf[FPS_byte_count++] = UARTCharGetNonBlocking(UART0_BASE);
+                if(FPS_byte_count == FP_RSP_PACKET_LENGTH)
+                {
+                    FP_state = FP_PROCESS_RSP;
+                    UARTIntClear(UART0_BASE, UART_INT_RX);
+                }
+           }
+         else if (FP_state == FP_WAIT_DATA)
+             {
+                 data_databuf[FPS_byte_count++] = UARTCharGetNonBlocking(UART0_BASE);
+                 if(FPS_byte_count == FP_DATA_PACKET_LENGTH )
+                     {
+                         FP_state = FP_PROCESS_RSP;
+                         UARTIntClear(UART0_BASE, UART_INT_RX);
+                     }
+             }
+     }
+
+  void UART1_IRQHandler(void){
+      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+      uint8_t input = UARTCharGetNonBlocking(UART0_BASE);
+      xResult = xEventGroupSEtBitsFRomISR(xFP_EVENT, (1 << input), &xHigherPriorityTaskWoken);
+      if(xResult != pdFAIL){
+          portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+      }
+  }
+
+
+

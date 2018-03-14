@@ -1,6 +1,10 @@
+<<<<<<< HEAD
 Debug/
 .launches/
 Demo/
 Release/
 *.lnt
 .config/
+=======
+*.o
+>>>>>>> 71b6d677a3165763302ca372c2d04468c246779e

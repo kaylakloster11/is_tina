@@ -1,0 +1,63 @@
+################################################################################
+# Automatically-generated file. Do not edit!
+################################################################################
+
+# Add inputs and outputs from these tool invocations to the build variables 
+CMD_SRCS += \
+../tm4c1294ncpdt.cmd 
+
+C_SRCS += \
+../FPS.c \
+../LED1Task.c \
+../LED2Task.c \
+../UARTproj.c \
+../main.c \
+../timers.c \
+../tm4c1294ncpdt_startup_ccs.c 
+
+C_DEPS += \
+./FPS.d \
+./LED1Task.d \
+./LED2Task.d \
+./UARTproj.d \
+./main.d \
+./timers.d \
+./tm4c1294ncpdt_startup_ccs.d 
+
+OBJS += \
+./FPS.obj \
+./LED1Task.obj \
+./LED2Task.obj \
+./UARTproj.obj \
+./main.obj \
+./timers.obj \
+./tm4c1294ncpdt_startup_ccs.obj 
+
+OBJS__QUOTED += \
+"FPS.obj" \
+"LED1Task.obj" \
+"LED2Task.obj" \
+"UARTproj.obj" \
+"main.obj" \
+"timers.obj" \
+"tm4c1294ncpdt_startup_ccs.obj" 
+
+C_DEPS__QUOTED += \
+"FPS.d" \
+"LED1Task.d" \
+"LED2Task.d" \
+"UARTproj.d" \
+"main.d" \
+"timers.d" \
+"tm4c1294ncpdt_startup_ccs.d" 
+
+C_SRCS__QUOTED += \
+"../FPS.c" \
+"../LED1Task.c" \
+"../LED2Task.c" \
+"../UARTproj.c" \
+"../main.c" \
+"../timers.c" \
+"../tm4c1294ncpdt_startup_ccs.c" 
+
+

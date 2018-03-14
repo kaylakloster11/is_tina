@@ -1,0 +1,35 @@
+/*
+ * timers.c
+ *
+ *  Created on: Mar 13, 2018
+ *      Author: kaylak
+ */
+
+#include <stdint.h>
+#include <stdbool.h>
+#include "driverlib/interrupt.h"
+#include "driverlib/rom.h"
+#include "driverlib/rom_map.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/timer.h"
+#include "UARTProj.h"
+
+void TIMER_CONFIG(void){
+    uint32_t ClockSRCFreq = MAP_SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ | SYSCTL_OSC_MAIN |
+                                                                    SYSCTL_USE_PLL |
+                                                                    SYSCTL_CFG_VCO_480), 120000000); /* Set clock source to be directly from crystal at 120 MHz */
+    ROM_SysCtlPEripheralEnable(SYSCTL_PERIPH_TIMER0);
+    ROM_TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
+    ROM_TimerLoadSet(TIMER0_BASE, TIMER_A, ClockSRCFreq);  /* Set load value to the clock source frequency so we will interrupt every 1 second*/
+    ROM_IntENable(INT_TIMER0A);
+    ROM_TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT /*TIMERA match interrupt*/);
+
+}
+
+void TimerA_0_IRQHandler() {
+    ROM_TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+    ROM_IntMasterDisable();
+    UART_send_A0("Please press finger\n", 20);
+    ROM_IntMasterEnable();
+    }
+}

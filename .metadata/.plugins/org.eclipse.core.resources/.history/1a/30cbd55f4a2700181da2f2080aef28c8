@@ -1,0 +1,36 @@
+/*
+ * UARTproj.h
+ *
+ *  Created on: Mar 12, 2018
+ *      Author: kaylak
+ */
+
+#ifndef UARTPROJ_H_
+#define UARTPROJ_H_
+
+#include <stdint.h>
+#include <stdbool.h>
+#include "driverlib/interrupt.h"
+#include "driverlib/rom.h"
+#include "driverlib/rom_map.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/uart.h"
+#include "driverlib/gpio.h"
+#include "UARTproj.h"
+#include "FPS.h"
+
+uint32_t ClockSRCFreq = MAP_SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ | SYSCTL_OSC_MAIN |
+                                                                    SYSCTL_USE_PLL |
+                                                                    SYSCTL_CFG_VCO_480), 120000000); /* Set clock source to be directly from crystal at 120 MHz */
+void UART_CONFIG(void);
+void MENU_DISPLAY(void);
+void UART_send_byteA0(const uint8_t * data);
+void UART_send_byteA0(const uint8_t * data);
+void UART6_IRQHandler(void);
+void UART0_IRQHandler(void);
+
+
+void TIMER_CONFIG(void);
+void TimerA_0_IRQHandler();
+
+#endif /* UARTPROJ_H_ */

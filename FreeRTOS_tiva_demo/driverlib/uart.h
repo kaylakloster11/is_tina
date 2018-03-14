@@ -37,6 +37,7 @@
 //
 //*****************************************************************************
 
+#include <stdbool.h>
 #ifndef __DRIVERLIB_UART_H__
 #define __DRIVERLIB_UART_H__
 

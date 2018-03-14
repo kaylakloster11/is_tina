@@ -1,0 +1,24 @@
+/*
+ * UARTproj.h
+ *
+ *  Created on: Mar 12, 2018
+ *      Author: kaylak
+ */
+
+#ifndef UARTPROJ_H_
+#define UARTPROJ_H_
+
+
+    typedef enum{
+        NO_TASK       = 0x00,   // Default value. no error
+        FP_ENROLL     = 0x01,   // Obsolete, capture timeout
+        FP_CHECKID    = 0x02,   // Obsolete, Invalid serial baud rate
+        FP_DELETEID   = 0x03,   // The specified ID is not between 0~199
+        FP_DELETEALL  = 0x04,   // The specified ID is not used
+    }TODO_TASK;
+
+    static const __flash TODO_TASK lookup[5]=
+        {
+         NO_TASK, FP_ENROLL, FP_CHECKID, FP_DELETEID, FP_DELETEALL
+        };
+#endif /* UARTPROJ_H_ */

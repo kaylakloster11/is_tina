@@ -56,9 +56,12 @@ extern uint32_t __STACK_TOP;
 //
 //*****************************************************************************
 extern void xPortPendSVHandler(void);
-extern void vPortSVCHandler(void);
 extern void xPortSysTickHandler(void);
-
+extern void vPortSVCHandler(void);
+extern void UART0_IRQHandler  (void);
+extern void UART6_IRQHandler(void);
+extern void TimerA_0_IRQHandler(void);
+//__attribute__((weak,alias("IntDefaultHandler")));
 
 //*****************************************************************************
 //
@@ -92,7 +95,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // GPIO Port C
     IntDefaultHandler,                      // GPIO Port D
     IntDefaultHandler,                      // GPIO Port E
-    IntDefaultHandler,                      // UART0 Rx and Tx
+    UART0_IRQHandler,                           // UART0 Rx and Tx
     IntDefaultHandler,                      // UART1 Rx and Tx
     IntDefaultHandler,                      // SSI0 Rx and Tx
     IntDefaultHandler,                      // I2C0 Master and Slave
@@ -106,7 +109,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // ADC Sequence 2
     IntDefaultHandler,                      // ADC Sequence 3
     IntDefaultHandler,                      // Watchdog timer
-    IntDefaultHandler,                      // Timer 0 subtimer A
+    TimerA_0_IRQHandler,                      // Timer 0 subtimer A
     IntDefaultHandler,                      // Timer 0 subtimer B
     IntDefaultHandler,                      // Timer 1 subtimer A
     IntDefaultHandler,                      // Timer 1 subtimer B
@@ -146,7 +149,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // UART3 Rx and Tx
     IntDefaultHandler,                      // UART4 Rx and Tx
     IntDefaultHandler,                      // UART5 Rx and Tx
-    IntDefaultHandler,                      // UART6 Rx and Tx
+    UART6_IRQHandler,                      // UART6 Rx and Tx
     IntDefaultHandler,                      // UART7 Rx and Tx
     IntDefaultHandler,                      // I2C2 Master and Slave
     IntDefaultHandler,                      // I2C3 Master and Slave
