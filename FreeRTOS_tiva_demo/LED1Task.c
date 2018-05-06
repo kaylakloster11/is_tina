@@ -17,7 +17,7 @@
 #include "pin_map.h"
 
 // Flash the LEDs on the launchpad
-void LED_Task1(void *pvParameters)
+/* void LED_Task1(void *pvParameters)
 {
     for (;;)
     {
@@ -25,7 +25,7 @@ void LED_Task1(void *pvParameters)
         LEDWrite(GPIO_PF0_EN0LED0, 0x01);
         vTaskDelay(100);
     }
-}
+} */
 
 
 #endif /* LED1TASK_C_ */

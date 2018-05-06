@@ -169,5 +169,7 @@ void FPS_Delete_ALL();
 void FPS_PRINT_ENROLLED();
 void WaitResponse();
 
+void FP_MENU( void *pvParameters );
+
 #endif /* FPS_H_ */
 

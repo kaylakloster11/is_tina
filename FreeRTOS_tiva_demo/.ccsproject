@@ -11,5 +11,5 @@
 	<createSlaveProjects value=""/>
 	<templateProperties value="id=com.ti.common.project.core.emptyProjectWithMainTemplate,"/>
 	<isTargetManual value="false"/>
-	<origin value="C:/Users/kayla/TM4C129_FreeRTOS_Demo-master"/>
+	<origin value="C:/Users/kayla/workspace_v7/is_tiva/FreeRTOS_tiva_demo"/>
 </projectOptions>

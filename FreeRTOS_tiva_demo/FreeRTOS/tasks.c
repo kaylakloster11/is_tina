@@ -3373,7 +3373,7 @@ static void prvCheckTasksWaitingTermination( void )
 
 		/* ucTasksDeleted is used to prevent vTaskSuspendAll() being called
 		too often in the idle task. */
-		while( uxDeletedTasksWaitingCleanUp > ( UBaseType_t ) 0U )
+ 		while( uxDeletedTasksWaitingCleanUp > ( UBaseType_t ) 0U )
 		{
 			vTaskSuspendAll();
 			{

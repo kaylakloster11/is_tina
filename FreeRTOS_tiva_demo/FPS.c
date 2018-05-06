@@ -6,6 +6,7 @@
  */
 
 #include "FPS.h"
+
 // FreeRTOS includes
 #include "FreeRTOSConfig.h"
 #include "FreeRTOS.h"
@@ -13,6 +14,7 @@
 #include "task.h"
 #include "event_groups.h"
 
+#include "FPS.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include "main.h"
@@ -41,6 +43,60 @@ extern volatile uint8_t FP_state;
 extern volatile uint8_t FPS_byte_count;
 
 extern EventGroupHandle_t xUserInEvent;
+extern TaskHandle_t xFP_Menu;
+
+#define ULONG_MAX   0xffffffff
+
+//#define traceTASK_SWITCHED_OUT() xTaskCallApplicationTaskHook(FP_Task, 0 )
+
+void FP_MENU( void *pvParameters ){
+
+   // uint32_t ulNotifiedValue;
+    for(;;){
+       // xTaskNotifyWait( 0x00,  ULONG_MAX, &ulNotifiedValue, portMAX_DELAY );
+        ulTaskNotifyTake( pdTRUE, portMAX_DELAY);
+       // if( ulNotifiedValue & 0x01)
+#ifdef UART_0
+            UART_send_A0("MENU Options:", 13);
+            UART_send_byteA0(0x0A);
+            UART_send_A0("0.Display Menu", 12);
+            UART_send_byteA0(0x0A);
+            UART_send_A0("1.Check Print", 13);
+            UART_send_byteA0(0x0A);
+            UART_send_A0("2.Enroll Print", 14);
+            UART_send_byteA0(0x0A);
+            UART_send_A0("3.Delete Print", 14);
+            UART_send_byteA0(0x0A);
+            UART_send_A0("4.Delete ALL", 12);
+            UART_send_byteA0(0x0A);
+            UART_send_A0("5.Display Accel", 15);
+            UART_send_byteA0(0x0A);
+            UART_send_A0("6.Calibrate", 11);
+            UART_send_byteA0(0x0A);
+            UART_send_byteA0(0x0A);
+#endif
+
+#ifdef BLUETOOTH
+            UART_send_A4("MENU Options:", 13);
+            UART_send_byteA4(0x0A);
+            UART_send_A4("0.Display Menu", 14);
+            UART_send_byteA4(0x0A);
+            UART_send_A4("1.Check Print", 13);
+            UART_send_byteA4(0x0A);
+            UART_send_A4("2.Enroll Print", 14);
+            UART_send_byteA4(0x0A);
+            UART_send_A4("3.Delete Print", 14);
+            UART_send_byteA4(0x0A);
+            UART_send_A4("4.Delete ALL", 12);
+            UART_send_byteA4(0x0A);
+            UART_send_A4("5.Display Accel", 15);
+            UART_send_byteA4(0x0A);
+            UART_send_A4("6.Calibrate", 11);
+            UART_send_byteA4(0x0A);
+            UART_send_byteA4(0x0A);
+#endif
+    }
+}
 
 
   void FP_send_cmd(uint8_t * data, uint32_t length){
@@ -359,8 +415,78 @@ extern EventGroupHandle_t xUserInEvent;
         return rp.ack;
     }
 
-   void ENROLLPRINT(){
-       UART_send_A0("ENROLLING A PRINT\n", 18);
+void ENROLLPRINT(){
+#ifdef UART_0
+    UART_send_A0("ENROLLING A PRINT\n", 18);
+    int8_t enroll1[] ="Press finger to Enroll\n";
+    uint32_t len1 = strlen(enroll1);
+    uint8_t remove[] = "Remove finger\n";
+    uint32_t remLen = strlen(remove);
+    uint8_t enroll2[] = "Press same finger again\n";
+    uint32_t len2 = strlen(enroll2);
+    uint8_t enroll3[] = "Press same finger yet again\n";
+    uint32_t len3 = strlen(enroll3);
+    uint8_t success[] = "Enrolling Successful\n";
+    uint32_t finLen = strlen(success);
+    uint8_t error1[] = "Failed to capture first finger\n";
+    uint32_t errlen1 = strlen(error1);
+    uint8_t error2[] = "Failed to capture second finger\n";
+    uint32_t errlen2 = strlen(error2);
+    uint8_t error3[] = "Failed to capture third finger\n";
+    uint32_t errlen3 = strlen(error3);
+    uint8_t enrollid = 0;
+    enrollid = Available_ID();
+
+       EnrollStart(enrollid);
+       UART_send_A0(enroll1, len1);
+       while(IsFingerPressed() == 0);
+
+       CaptureFinger(1);
+               if (rp.ack == 1)
+               {
+                   UART_send_A0(remove, remLen);
+                   Enroll1();
+                   while(IsFingerPressed() == 1);
+
+                   UART_send_A0(enroll2, len2);
+                   while(IsFingerPressed() == 0);
+
+                   CaptureFinger(1);
+                   if (rp.ack ==1)
+                   {
+                       UART_send_A0(remove, remLen);
+                       Enroll2();
+                       while(IsFingerPressed() == 1);
+                       UART_send_A0(enroll3, len3);
+                       while(IsFingerPressed() == 0);
+
+                      CaptureFinger(1);
+                       if (rp.ack == 1)
+                       {
+                          UART_send_A0(remove, remLen);
+                          Enroll3();
+                          if(rp.ack ==1){
+                              UART_send_A0(success, finLen);
+                          }
+                          else{
+                              UART_send_A0("Enrolling Failed\n", 17);
+                          }
+                        }
+                       else {
+                           UART_send_A0(error3, errlen3);
+                       }
+                   }
+                   else {
+                       UART_send_A0(error2, errlen2);
+                   }
+               }
+          else{
+              UART_send_A0(error1, errlen1);
+          }
+#endif
+
+#ifdef BLUETOOTH
+       UART_send_A4("ENROLLING A PRINT\n", 18);
        int8_t enroll1[] ="Press finger to Enroll\n";
        uint32_t len1 = strlen(enroll1);
        uint8_t remove[] = "Remove finger\n";
@@ -377,57 +503,57 @@ extern EventGroupHandle_t xUserInEvent;
        uint32_t errlen2 = strlen(error2);
        uint8_t error3[] = "Failed to capture third finger\n";
        uint32_t errlen3 = strlen(error3);
-
        uint8_t enrollid = 0;
        enrollid = Available_ID();
 
           EnrollStart(enrollid);
-          UART_send_A0(enroll1, len1);
+          UART_send_A4(enroll1, len1);
           while(IsFingerPressed() == 0);
 
           CaptureFinger(1);
                   if (rp.ack == 1)
                   {
-                      UART_send_A0(remove, remLen);
+                      UART_send_A4(remove, remLen);
                       Enroll1();
                       while(IsFingerPressed() == 1);
 
-                      UART_send_A0(enroll2, len2);
+                      UART_send_A4(enroll2, len2);
                       while(IsFingerPressed() == 0);
 
                       CaptureFinger(1);
                       if (rp.ack ==1)
                       {
-                          UART_send_A0(remove, remLen);
+                          UART_send_A4(remove, remLen);
                           Enroll2();
                           while(IsFingerPressed() == 1);
-                          UART_send_A0(enroll3, len3);
+                          UART_send_A4(enroll3, len3);
                           while(IsFingerPressed() == 0);
 
                          CaptureFinger(1);
                           if (rp.ack == 1)
                           {
-                             UART_send_A0(remove, remLen);
+                             UART_send_A4(remove, remLen);
                              Enroll3();
                              if(rp.ack ==1){
-                                 UART_send_A0(success, finLen);
+                                 UART_send_A4(success, finLen);
                              }
                              else{
-                                 UART_send_A0("Enrolling Failed\n", 17);
+                                 UART_send_A4("Enrolling Failed\n", 17);
                              }
                            }
                           else {
-                              UART_send_A0(error3, errlen3);
+                              UART_send_A4(error3, errlen3);
                           }
                       }
                       else {
-                          UART_send_A0(error2, errlen2);
+                          UART_send_A4(error2, errlen2);
                       }
                   }
              else{
-                 UART_send_A0(error1, errlen1);
+                 UART_send_A4(error1, errlen1);
              }
-       }
+#endif
+     }
 
 
     int IDENTIFY_PRINT(){
@@ -445,6 +571,7 @@ extern EventGroupHandle_t xUserInEvent;
              uint32_t lenID = strlen((char *)strID);
 
              if (id <20)
+#ifdef UART_0
              {//if the fingerprint matches, provide the matching template ID
                  UART_send_A0("Verified ID: ", 13);
                  UART_send_A0(&strID,lenID);
@@ -454,10 +581,24 @@ extern EventGroupHandle_t xUserInEvent;
              {//if unable to recognize
                  UART_send_A0("Finger not found\n", 17);
              }
+#endif
+
+#ifdef BLUETOOTH
+             {//if the fingerprint matches, provide the matching template ID
+                 UART_send_A4("Verified ID: ", 13);
+                 UART_send_A4(&strID,lenID);
+                 UART_send_byteA4(0x0A);
+             }
+             else
+             {//if unable to recognize
+                 UART_send_A4("Finger not found\n", 17);
+             }
+#endif
              return id;
         }
 
     void FPS_Delete_ID(){
+#ifdef UART_0
         UART_send_A0("DELETE ONE PRINT\n", 17);
         int i = 0;
         int no_ID = 1;
@@ -482,18 +623,59 @@ extern EventGroupHandle_t xUserInEvent;
             else{
                 UART_send_A0("Finger to Delete Not Found\n", 27);
             }
+#endif
+
+#ifdef BLUETOOTH
+        UART_send_A4("DELETE ONE PRINT\n", 17);
+        int i = 0;
+        int no_ID = 1;
+        int ID = 0;
+        while(no_ID){
+                ID = IDENTIFY_PRINT();
+                   if(ID < 20){
+                       no_ID = 0;
+                   }
+                   else{
+                       no_ID = 1;
+                       i++;
+                   }
+               if(i > 6){
+                   no_ID = 0;
+               }
+             }
+
+            if(DeleteID(ID)){
+                UART_send_A4("Fingerprint Deleted\n", 20);
+            }
+            else{
+                UART_send_A4("Finger to Delete Not Found\n", 27);
+            }
+#endif
     }
 
 
     void FPS_Delete_ALL(){
+#ifdef UART_0
         UART_send_A0("DELETING ALL PRINTS\n", 20);
-       if(DeleteAll()){
-           UART_send_A0("All Fingers Deleted\n", 20);
-       }
-      else{
-          UART_send_A0("No Prints Found\n", 16);
-       }
+              if(DeleteAll()){
+                  UART_send_A0("All Fingers Deleted\n", 20);
+              }
+             else{
+                 UART_send_A0("No Prints Found\n", 16);
+              }
+#endif
+
+#ifdef BLUETOOTH
+              UART_send_A4("DELETING ALL PRINTS\n", 20);
+                    if(DeleteAll()){
+                        UART_send_A4("All Fingers Deleted\n", 20);
+                    }
+                   else{
+                       UART_send_A4("No Prints Found\n", 16);
+                    }
+#endif
     }
+
 
     void FPS_PRINT_ENROLLED(){
         int num_Enroll = 0;
@@ -501,8 +683,15 @@ extern EventGroupHandle_t xUserInEvent;
         char strNum[3] = 0;
         itoa(num_Enroll, strNum);
         uint32_t numLen = strlen((char *)strNum);
+#ifdef UART_0
         UART_send_A0("Number of Stored Prints: ", 25);
         UART_send_A0(&strNum, numLen);
+#endif
+
+#ifdef BLUETOOTH
+        UART_send_A4("Number of Stored Prints: ", 25);
+        UART_send_A4(&strNum, numLen);
+#endif
     }
 
     void WaitResponse(){
@@ -520,9 +709,10 @@ void FP_Task(void *pvParameter){
     EventBits_t xFPEventValue;
     const EventBits_t xBitsToWaitFor = (FP_CHECKID_TASK_BIT | FP_ENROLL_TASK_BIT | FP_DELETEID_TASK_BIT | FP_DELETEALL_TASK_BIT);
     for(;;){
-        xFPEventValue = xEventGroupWaitBits(xUserInEvent, xBitsToWaitFor, pdTRUE, pdTRUE, portMAX_DELAY);
+        xFPEventValue = xEventGroupWaitBits(xUserInEvent, xBitsToWaitFor, pdTRUE, pdFALSE, portMAX_DELAY);
 
         if(xFPEventValue & FP_CHECKID_TASK_BIT){
+            Open();
             SetLED(1);
             while(IsFingerPressed() == 0){
                   //freqDiv = 30;
@@ -535,7 +725,7 @@ void FP_Task(void *pvParameter){
                   char strID[3] = 0;
                   itoa(id, strID);
                   uint32_t lenID = strlen((char *)strID);
-
+#ifdef UART_0
                   if (id < 20)
                   {//if the fingerprint matches, provide the matching template ID
                       UART_send_A0("Verified ID: ", 13);
@@ -546,25 +736,54 @@ void FP_Task(void *pvParameter){
                   {//if unable to recognize
                       UART_send_A0("Finger not found\n", 17);
                   }
+#endif
+
+#ifdef BLUETOOTH
+                  if (id < 20)
+                  {//if the fingerprint matches, provide the matching template ID
+                      UART_send_A4("Verified ID: ", 13);
+                      UART_send_A4(&strID,lenID);
+                      UART_send_byteA4(0x0A);
+                  }
+                  else
+                  {//if unable to recognize
+                      UART_send_A4("Finger not found\n", 17);
+                  }
+#endif
                   SetLED(0);
+                  xTaskNotifyGive(xFP_Menu);
+                  ROM_TimerEnable(TIMER2_BASE, TIMER_A);
+                  //xTaskNotify( xFP_Menu, 0x01, eSetBits );
             }
 
         if(xFPEventValue & FP_ENROLL_TASK_BIT){
+            Open();
             SetLED(1);
             ENROLLPRINT();
             SetLED(0);
+            xTaskNotifyGive(xFP_Menu);
+            ROM_TimerEnable(TIMER2_BASE, TIMER_A);
+            //xTaskNotify( xFP_Menu, 0x01, eSetBits );
         }
 
         if(xFPEventValue & FP_DELETEID_TASK_BIT){
+            Open();
             SetLED(1);
             FPS_Delete_ID();
             SetLED(0);
+            xTaskNotifyGive(xFP_Menu);
+            ROM_TimerEnable(TIMER2_BASE, TIMER_A);
+            //xTaskNotify( xFP_Menu, 0x01, eSetBits );
         }
 
         if(xFPEventValue & FP_DELETEALL_TASK_BIT){
+            Open();
             SetLED(1);
             FPS_Delete_ALL();
             SetLED(0);
+            xTaskNotifyGive(xFP_Menu);
+            ROM_TimerEnable(TIMER2_BASE, TIMER_A);
+            //xTaskNotify( xFP_Menu, 0x01, eSetBits );
         }
    }
 }
